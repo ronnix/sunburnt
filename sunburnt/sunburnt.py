@@ -10,7 +10,7 @@ import warnings
 import httplib2
 
 from .schema import SolrSchema, SolrError
-from .search import LuceneQuery, SolrSearch, params_from_dict
+from .search import LuceneQuery, SolrSearch, MoreLikeThis, params_from_dict
 
 
 class SolrConnection(object):
@@ -22,6 +22,7 @@ class SolrConnection(object):
         self.url = url.rstrip("/") + "/"
         self.update_url = self.url + "update/"
         self.select_url = self.url + "select/"
+        self.mlt_url = self.url + "mlt/"
         self.retry_timeout = retry_timeout
 
     def request(self, *args, **kwargs):
@@ -61,6 +62,14 @@ class SolrConnection(object):
     def select(self, params):
         qs = urllib.urlencode(params)
         url = "%s?%s" % (self.select_url, qs)
+        r, c = self.request(url)
+        if r.status != 200:
+            raise SolrError(r, c)
+        return c
+
+    def mlt(self, params):
+        qs = urllib.urlencode(params)
+        url = "%s?%s" % (self.mlt_url, qs)
         r, c = self.request(url)
         if r.status != 200:
             raise SolrError(r, c)
@@ -139,10 +148,25 @@ class SolrInterface(object):
         params = params_from_dict(**kwargs)
         return self.schema.parse_response(self.conn.select(params))
 
+    def more_like_this(self, **kwargs):
+        if not self.readable:
+            raise TypeError("This Solr instance is only for writing")
+        params = params_from_dict(**kwargs)
+        return self.schema.parse_response(self.conn.mlt(params))
+
     def query(self, *args, **kwargs):
         if not self.readable:
             raise TypeError("This Solr instance is only for writing")
         q = SolrSearch(self)
+        if len(args) + len(kwargs) > 0:
+            return q.query(*args, **kwargs)
+        else:
+            return q
+
+    def mlt_query(self, *args, **kwargs):
+        if not self.readable:
+            raise TypeError("This Solr instance is only for writing")
+        q = MoreLikeThis(self)
         if len(args) + len(kwargs) > 0:
             return q.query(*args, **kwargs)
         else:

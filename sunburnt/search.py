@@ -480,6 +480,15 @@ class SolrSearch(object):
         return result
 
 
+class MoreLikeThis(SolrSearch):
+
+    def execute(self, constructor=dict):
+        result = self.interface.more_like_this(**self.options())
+        if constructor is not dict:
+            result.result.docs = [constructor(**d) for d in result.result.docs]
+        return result
+
+
 class Options(object):
     def clone(self):
         return self.__class__(self.schema, self)
