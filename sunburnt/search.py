@@ -482,6 +482,9 @@ class SolrSearch(object):
 
 class MoreLikeThis(SolrSearch):
 
+    def clone(self):
+        return MoreLikeThis(interface=self.interface, original=self)
+
     def execute(self, constructor=dict):
         result = self.interface.more_like_this(**self.options())
         if constructor is not dict:

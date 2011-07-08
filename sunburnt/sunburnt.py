@@ -68,6 +68,7 @@ class SolrConnection(object):
         return c
 
     def mlt(self, params):
+        params.append(('mlt.match.include', 'false'))
         qs = urllib.urlencode(params)
         url = "%s?%s" % (self.mlt_url, qs)
         r, c = self.request(url)
